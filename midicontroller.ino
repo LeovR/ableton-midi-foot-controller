@@ -171,31 +171,34 @@ void loop()
 
   updateButtons();
 
-  changeBank();
+  boolean modeChange = changeMode();
 
-  changeMode();
+  if (!modeChange) {
+    changeBank();
+  }
 
   updateLeds();
 
 }
 
-boolean bothBanksDownLastState = false;
+boolean bothBanksDown = false;
 
-void changeMode() {
-  /*if (bankDownDown && bankUpDown) {
-    if (!previousBothBanksDown) {
-      initMode = 1 - initMode;
-      previousBothBanksDown = true;
-      if (initMode) {
-        Serial.println("Init mode");
-      } else {
-        Serial.println("Normal mode");
-      }
+boolean changeMode() {
+  if (bankDownButton.isPressed() && bankUpButton.isPressed()) {
+    bothBanksDown = true;
+  } else if (bothBanksDown && ((bankDownButton.isJustReleased() && !bankUpButton.isPressed()) || (bankUpButton.isJustReleased() && !bankDownButton.isPressed()))) {
+    bothBanksDown = false;
+    initMode = 1 - initMode;
+    if (initMode) {
+      Serial.println("Init mode");
     } else {
-      previousBothBanksDown = false;
+      Serial.println("Normal mode");
     }
-    }*/
-
+    return true;
+  } else if (bothBanksDown) {
+    return true;
+  }
+  return false;
 }
 
 void changeBank() {
