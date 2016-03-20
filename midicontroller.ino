@@ -42,6 +42,11 @@ boolean stopDown;
 boolean playState;
 boolean playDown;
 
+boolean bankDownLastState = false;
+boolean bankUpLastState = false;
+
+byte bank = 0;
+
 const byte bpmLed = 22;
 
 
@@ -158,10 +163,31 @@ void updateButtonState(byte pin, Bounce *button, boolean *state, boolean *down) 
 void loop()
 {
   usbMIDI.read();
+
   updateButtons();
+
+  updateState();
+
   updateLeds();
 
 
+}
+
+void updateState() {
+  boolean update = false;
+  if (bankDownState != bankDownLastState) {
+    bankDownLastState = bankDownState;
+    bank--;
+    update = true;
+  } else if (bankUpState != bankUpLastState) {
+    bankUpLastState = bankUpState;
+    bank++;
+    update = true;
+  }
+  if (update) {
+    Serial.print("Bank ");
+    Serial.println(bank);
+  }
 }
 
 void updateLeds() {
