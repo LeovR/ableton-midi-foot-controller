@@ -1,14 +1,12 @@
-#include <Bounce2.h>
+#include "Button.h"
+#include "base64/Base64.h"
 
 #include <Adafruit_GFX.h>
-
 #include <SPI.h>
-
 #include <Wire.h>
-
 #include <Adafruit_SSD1306.h>
 
-#include "base64/Base64.h"
+
 
 byte counter;
 const byte CLOCK = 248;
@@ -17,17 +15,19 @@ const byte CONTINUE = 251;
 const byte STOP = 252;
 const int ledPin = 13;
 
+const byte bpmLed = 22;
+
 const byte channelButtonStart = 0;
 const byte numberOfChannelButtons = 2;
 const byte ledPins[] = {/*10, 11, 12,*/ 14, 15, 16};
-Bounce channelButtons[numberOfChannelButtons];
+Button channelButtons[numberOfChannelButtons];
 boolean channelButtonStates[numberOfChannelButtons];
 boolean channelButtonDown[numberOfChannelButtons];
 
 const byte bankDownPin = 6;
 const byte bankUpPin = 7;
-Bounce bankDownButton = Bounce();
-Bounce bankUpButton = Bounce();
+Button bankDownButton = Button();
+Button bankUpButton = Button();
 boolean bankDownState;
 boolean bankDownDown;
 boolean bankUpState;
@@ -35,8 +35,8 @@ boolean bankUpDown;
 
 const byte stopPin = 8;
 const byte playPin = 9;
-Bounce stopButton = Bounce();
-Bounce playButton = Bounce();
+Button stopButton = Button();
+Button playButton = Button();
 boolean stopState;
 boolean stopDown;
 boolean playState;
@@ -47,8 +47,7 @@ boolean bankUpLastState = false;
 
 byte bank = 0;
 
-const byte bpmLed = 22;
-
+boolean initMode = false;
 
 void OnNoteOn(byte channel, byte note, byte velocity)
 {
@@ -76,12 +75,13 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
 
 void setupButtons() {
   for (byte i = 0; i < numberOfChannelButtons; i++) {
-    initButton(channelButtonStart + i, &channelButtons[i], &channelButtonStates[i], &channelButtonDown[i]);
+    //initButton(channelButtonStart + i, &channelButtons[i], &channelButtonStates[i], &channelButtonDown[i]);
+    channelButtons[i].init(channelButtonStart + i);
   }
-  initButton(bankDownPin, &bankDownButton, &bankDownState, &bankDownDown);
-  initButton(bankUpPin, &bankUpButton, &bankUpState, &bankUpDown);
-  initButton(stopPin, &stopButton, &stopState, &stopDown);
-  initButton(playPin, &playButton, &playState, &playDown);
+  bankDownButton.init(bankDownPin);
+  bankUpButton.init(bankUpPin);
+  stopButton.init(stopPin);
+  playButton.init(playPin);
 }
 
 void initButton(byte pin, Bounce *button, boolean *state, boolean *down) {
@@ -133,30 +133,34 @@ void ledTest(byte pin) {
   delay(200);
 }
 
-void updateButtons() {
-  for (byte i = 0; i < numberOfChannelButtons; i++) {
-    updateButtonState(channelButtonStart + i, &channelButtons[i], &channelButtonStates[i], &channelButtonDown[i]);
-  }
-  updateButtonState(bankDownPin, &bankDownButton, &bankDownState, &bankDownDown);
-  updateButtonState(bankUpPin, &bankUpButton, &bankUpState, &bankUpDown);
-  updateButtonState(stopPin, &stopButton, &stopState, &stopDown);
-  updateButtonState(playPin, &playButton, &playState, &playDown);
+void debugButton(Button *button) {
+  Serial.print("Button: ");
+  Serial.print((*button).getPin());
+  Serial.print(" Just pressed: ");
+  Serial.print((*button).isJustPressed());
+  Serial.print(" Pressed: ");
+  Serial.print((*button).isPressed());
+  Serial.print(" Just released : ");
+  Serial.println((*button).isJustReleased());
 }
 
-void updateButtonState(byte pin, Bounce *button, boolean *state, boolean *down) {
-  if ((*button).update()) {
-    if ((*button).read() == LOW) {
-      *down = true;
-      Serial.print("Button ");
-      Serial.print(pin);
-      Serial.println(" down");
-    } else if (*down) {
-      Serial.print("Button ");
-      Serial.print(pin);
-      Serial.println(" up");
-      *state = 1 - *state;
-      *down = false;
+void updateButtons() {
+  for (byte i = 0; i < numberOfChannelButtons; i++) {
+    if (channelButtons[i].update()) {
+      debugButton(&channelButtons[i]);
     }
+  }
+  if (bankDownButton.update()) {
+    debugButton(&bankDownButton);
+  }
+  if (bankUpButton.update()) {
+    debugButton(&bankUpButton);
+  }
+  if (stopButton.update()) {
+    debugButton(&stopButton);
+  }
+  if (playButton.update()) {
+    debugButton(&playButton);
   }
 }
 
@@ -166,21 +170,39 @@ void loop()
 
   updateButtons();
 
-  updateState();
+  changeBank();
+
+  changeMode();
 
   updateLeds();
 
+}
+
+boolean bothBanksDownLastState = false;
+
+void changeMode() {
+  /*if (bankDownDown && bankUpDown) {
+    if (!previousBothBanksDown) {
+      initMode = 1 - initMode;
+      previousBothBanksDown = true;
+      if (initMode) {
+        Serial.println("Init mode");
+      } else {
+        Serial.println("Normal mode");
+      }
+    } else {
+      previousBothBanksDown = false;
+    }
+    }*/
 
 }
 
-void updateState() {
+void changeBank() {
   boolean update = false;
-  if (bankDownState != bankDownLastState) {
-    bankDownLastState = bankDownState;
+  if (bankDownButton.isJustReleased()) {
     bank--;
     update = true;
-  } else if (bankUpState != bankUpLastState) {
-    bankUpLastState = bankUpState;
+  } else if (bankUpButton.isJustReleased()) {
     bank++;
     update = true;
   }
