@@ -18,12 +18,29 @@ const byte STOP = 252;
 const int ledPin = 13;
 
 const byte channelButtonStart = 0;
-//const byte channelButtonLedStart = 14;
 const byte numberOfChannelButtons = 2;
 const byte ledPins[] = {/*10, 11, 12,*/ 14, 15, 16};
 Bounce channelButtons[numberOfChannelButtons];
 boolean channelButtonStates[numberOfChannelButtons];
 boolean channelButtonDown[numberOfChannelButtons];
+
+const byte bankDownPin = 6;
+const byte bankUpPin = 7;
+Bounce bankDownButton = Bounce();
+Bounce bankUpButton = Bounce();
+boolean bankDownState;
+boolean bankDownDown;
+boolean bankUpState;
+boolean bankUpDown;
+
+const byte stopPin = 8;
+const byte playPin = 9;
+Bounce stopButton = Bounce();
+Bounce playButton = Bounce();
+boolean stopState;
+boolean stopDown;
+boolean playState;
+boolean playDown;
 
 const byte bpmLed = 22;
 
@@ -54,12 +71,20 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
 
 void setupButtons() {
   for (byte i = 0; i < numberOfChannelButtons; i++) {
-    pinMode(channelButtonStart + i, INPUT_PULLUP);
-    channelButtons[i].attach(channelButtonStart + i);
-    channelButtons[i].interval(10);
-    channelButtonStates[i] = false;
-    channelButtonDown[i] = false;
+    initButton(channelButtonStart + i, &channelButtons[i], &channelButtonStates[i], &channelButtonDown[i]);
   }
+  initButton(bankDownPin, &bankDownButton, &bankDownState, &bankDownDown);
+  initButton(bankUpPin, &bankUpButton, &bankUpState, &bankUpDown);
+  initButton(stopPin, &stopButton, &stopState, &stopDown);
+  initButton(playPin, &playButton, &playState, &playDown);
+}
+
+void initButton(byte pin, Bounce *button, boolean *state, boolean *down) {
+  pinMode(pin, INPUT_PULLUP);
+  (*button).attach(pin);
+  (*button).interval(10);
+  *state = false;
+  *down = false;
 }
 
 void setupLeds() {
@@ -105,18 +130,27 @@ void ledTest(byte pin) {
 
 void updateButtons() {
   for (byte i = 0; i < numberOfChannelButtons; i++) {
-    if (channelButtons[i].update()) {
-      if (channelButtons[i].read() == LOW) {
-        channelButtonDown[i] = true;
-      } else if (channelButtonDown[i]) {
-        channelButtonStates[i] = 1 - channelButtonStates[i];
-        channelButtonDown[i] = false;
-        if (channelButtonStates[i]) {
-          digitalWrite(ledPins[i], HIGH);
-        } else {
-          digitalWrite(ledPins[i], LOW);
-        }
-      }
+    updateButtonState(channelButtonStart + i, &channelButtons[i], &channelButtonStates[i], &channelButtonDown[i]);
+  }
+  updateButtonState(bankDownPin, &bankDownButton, &bankDownState, &bankDownDown);
+  updateButtonState(bankUpPin, &bankUpButton, &bankUpState, &bankUpDown);
+  updateButtonState(stopPin, &stopButton, &stopState, &stopDown);
+  updateButtonState(playPin, &playButton, &playState, &playDown);
+}
+
+void updateButtonState(byte pin, Bounce *button, boolean *state, boolean *down) {
+  if ((*button).update()) {
+    if ((*button).read() == LOW) {
+      *down = true;
+      Serial.print("Button ");
+      Serial.print(pin);
+      Serial.println(" down");
+    } else if (*down) {
+      Serial.print("Button ");
+      Serial.print(pin);
+      Serial.println(" up");
+      *state = 1 - *state;
+      *down = false;
     }
   }
 }
@@ -125,6 +159,19 @@ void loop()
 {
   usbMIDI.read();
   updateButtons();
+  updateLeds();
+
+
+}
+
+void updateLeds() {
+  for (byte i = 0; i < numberOfChannelButtons; i++) {
+    if (channelButtonStates[i]) {
+      digitalWrite(ledPins[i], HIGH);
+    } else {
+      digitalWrite(ledPins[i], LOW);
+    }
+  }
 }
 
 void RealTimeSystem(byte realtimebyte) {
