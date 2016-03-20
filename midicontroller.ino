@@ -75,7 +75,6 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
 
 void setupButtons() {
   for (byte i = 0; i < numberOfChannelButtons; i++) {
-    //initButton(channelButtonStart + i, &channelButtons[i], &channelButtonStates[i], &channelButtonDown[i]);
     channelButtons[i].init(channelButtonStart + i);
   }
   bankDownButton.init(bankDownPin);
