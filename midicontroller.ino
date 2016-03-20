@@ -134,6 +134,7 @@ void ledTest(byte pin) {
 }
 
 void debugButton(Button *button) {
+  #ifdef DEBUG_BUTTONS
   Serial.print("Button: ");
   Serial.print((*button).getPin());
   Serial.print(" Just pressed: ");
@@ -142,6 +143,7 @@ void debugButton(Button *button) {
   Serial.print((*button).isPressed());
   Serial.print(" Just released : ");
   Serial.println((*button).isJustReleased());
+  #endif
 }
 
 void updateButtons() {
