@@ -5,8 +5,6 @@
  *
  */
 Button::Button() {
-    /*_justPressed = false;
-    _justReleased = false;*/
 }
 
 /**
