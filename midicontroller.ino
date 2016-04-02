@@ -21,8 +21,6 @@ const byte channelButtonStart = 0;
 const byte numberOfChannelButtons = 2;
 const byte ledPins[] = {/*10, 11, 12,*/ 14, 15, 16};
 Button channelButtons[numberOfChannelButtons];
-boolean channelButtonStates[numberOfChannelButtons];
-boolean channelButtonDown[numberOfChannelButtons];
 
 const byte bankDownPin = 6;
 const byte bankUpPin = 7;
@@ -83,20 +81,9 @@ void setupButtons() {
   playButton.init(playPin);
 }
 
-void initButton(byte pin, Bounce *button, boolean *state, boolean *down) {
-  pinMode(pin, INPUT_PULLUP);
-  (*button).attach(pin);
-  (*button).interval(10);
-  *state = false;
-  *down = false;
-}
-
 void setupLeds() {
   pinMode(ledPin, OUTPUT);
-  pinMode(bpmLed, OUTPUT);
-  for (byte i = 0; i < numberOfChannelButtons; i++) {
-    pinMode(ledPins[i], OUTPUT);
-  }
+  pinMode(bpmLed, OUTPUT);  
 }
 
 
