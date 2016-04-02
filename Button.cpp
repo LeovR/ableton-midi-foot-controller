@@ -16,6 +16,12 @@ Button::~Button() {
 
 
 
+void Button::init(byte pin, byte led) {
+    init(pin);
+    pinMode(led, OUTPUT);
+    _led = led;
+}
+
 void Button::init(byte pin) {
     pinMode(pin, INPUT_PULLUP);
     _button = Bounce();
@@ -65,4 +71,16 @@ boolean Button::isJustReleased() {
 
 byte Button::getPin() {
     return _pin;
+}
+
+void Button::turnLedOn() {
+    if(_led) {
+        digitalWrite(_led, HIGH);
+    }
+}
+
+void Button::turnLedOff() {
+    if(_led) {
+        digitalWrite(_led, LOW);
+    }
 }

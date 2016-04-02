@@ -21,14 +21,18 @@ class Button {
     // Public functions
     boolean update();
     void init(byte pin);
+    void init(byte pin, byte led);
     boolean isPressed();
     boolean isJustPressed();
     boolean isJustReleased();
     byte getPin();
+    void turnLedOn();
+    void turnLedOff();
 
   private:
     // Private Attributes
     byte _pin;
+    byte _led;
     Bounce _button;
     byte _previousState;
     boolean _justReleased;
