@@ -6,7 +6,7 @@
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>
 
-
+#define DEBUG_BUTTONS true
 
 byte counter;
 const byte CLOCK = 248;
@@ -46,6 +46,10 @@ boolean bankUpLastState = false;
 byte bank = 0;
 
 boolean initMode = false;
+
+boolean bothBanksDown = false;
+
+const byte midiChannel = 1;
 
 void OnNoteOn(byte channel, byte note, byte velocity)
 {
@@ -152,6 +156,19 @@ void updateButtons() {
   }
 }
 
+void sendMidiNotes() {
+  if(!initMode) {
+    return;
+  }
+  for (byte i = 0; i < numberOfChannelButtons; i++) {
+    if (channelButtons[i].isJustReleased()) {
+      usbMIDI.sendNoteOff(i, 0, midiChannel);
+    } else if(channelButtons[i].isJustPressed()) {
+      usbMIDI.sendNoteOn(i, 99, midiChannel);
+    }
+  }  
+}
+
 void loop()
 {
   usbMIDI.read();
@@ -166,9 +183,9 @@ void loop()
 
   updateLeds();
 
-}
+  sendMidiNotes();
 
-boolean bothBanksDown = false;
+}
 
 boolean changeMode() {
   if (bankDownButton.isPressed() && bankUpButton.isPressed()) {
@@ -204,8 +221,11 @@ void changeBank() {
 }
 
 void updateLeds() {
+  if(initMode) {
+    return;
+  }
   for (byte i = 0; i < numberOfChannelButtons; i++) {
-    if (channelButtonStates[i]) {
+    if (channelButtons[i].isJustReleased()) {
       digitalWrite(ledPins[i], HIGH);
     } else {
       digitalWrite(ledPins[i], LOW);
@@ -220,7 +240,7 @@ void RealTimeSystem(byte realtimebyte) {
       counter = 0;
       digitalWrite(bpmLed, HIGH);
     }
-    if (counter == 23) {
+    if (counter == 22) {
       digitalWrite(bpmLed, HIGH);
     }
 
