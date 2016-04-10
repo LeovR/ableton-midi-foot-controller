@@ -21,6 +21,7 @@ const byte stopLed = 21;
 // Buttons
 const byte channelButtonStart = 0;
 const byte numberOfChannelButtons = 6;
+const byte numberOfAllButtons = 10;
 
 const byte bankDownPin = 6;
 const byte bankUpPin = 7;
@@ -44,6 +45,8 @@ boolean stopDown;
 boolean playState;
 boolean playDown;
 
+Button* allButtons[numberOfChannelButtons + 4];
+
 boolean bankDownLastState = false;
 boolean bankUpLastState = false;
 
@@ -55,13 +58,11 @@ boolean bothBanksDown = false;
 
 const byte midiChannel = 1;
 
-void OnNoteOn(byte channel, byte note, byte velocity)
-{
+void OnNoteOn(byte channel, byte note, byte velocity) {
   digitalWrite(ledPin, HIGH);
 }
 
-void OnNoteOff(byte channel, byte note, byte velocity)
-{
+void OnNoteOff(byte channel, byte note, byte velocity) {
   digitalWrite(ledPin, LOW);
 }
 
@@ -82,11 +83,16 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
 void setupButtons() {
   for (byte i = 0; i < numberOfChannelButtons; i++) {
     channelButtons[i].init(channelButtonStart + i, ledPins[i]);
+    allButtons[i] = &channelButtons[i];
   }
   bankDownButton.init(bankDownPin, bankDownLed);
+  allButtons[numberOfChannelButtons + 0] = &bankDownButton;
   bankUpButton.init(bankUpPin, bankUpLed);
+  allButtons[numberOfChannelButtons + 1] = &bankUpButton;
   stopButton.init(stopPin, stopLed);
+  allButtons[numberOfChannelButtons + 2] = &stopButton;
   playButton.init(playPin, playLed);
+  allButtons[numberOfChannelButtons + 3] = &playButton;
 }
 
 void setupLeds() {
@@ -132,7 +138,7 @@ void ledTest(byte pin) {
 }
 
 void debugButton(Button *button) {
-  #ifdef DEBUG_BUTTONS
+#ifdef DEBUG_BUTTONS
   Serial.print("Button: ");
   Serial.print((*button).getPin());
   Serial.print(" Just pressed: ");
@@ -141,26 +147,14 @@ void debugButton(Button *button) {
   Serial.print((*button).isPressed());
   Serial.print(" Just released : ");
   Serial.println((*button).isJustReleased());
-  #endif
+#endif
 }
 
 void updateButtons() {
-  for (byte i = 0; i < numberOfChannelButtons; i++) {
-    if (channelButtons[i].update()) {
-      debugButton(&channelButtons[i]);
+  for (byte i = 0; i < numberOfAllButtons; i++) {
+    if ((*allButtons[i]).update()) {
+      debugButton(allButtons[i]);
     }
-  }
-  if (bankDownButton.update()) {
-    debugButton(&bankDownButton);
-  }
-  if (bankUpButton.update()) {
-    debugButton(&bankUpButton);
-  }
-  if (stopButton.update()) {
-    debugButton(&stopButton);
-  }
-  if (playButton.update()) {
-    debugButton(&playButton);
   }
 }
 
@@ -185,13 +179,13 @@ void loop()
 
   boolean modeChange = changeMode();
 
-  if (!modeChange) {
+  /*if (!modeChange) {
     changeBank();
-  }
+    }
 
-  updateLeds();
+    updateLeds();
 
-  sendMidiNotes();
+    sendMidiNotes();*/
 
 }
 
@@ -229,14 +223,24 @@ void changeBank() {
 }
 
 void updateLeds() {
-  if(initMode) {
+  /*if(initMode) {
     return;
-  }
-  for (byte i = 0; i < numberOfChannelButtons; i++) {
+    }
+    for (byte i = 0; i < numberOfChannelButtons; i++) {
     if (channelButtons[i].isJustReleased()) {
       digitalWrite(ledPins[i], HIGH);
     } else {
       digitalWrite(ledPins[i], LOW);
+    }
+    }*/
+}
+
+void updateInitLeds() {
+  for (byte i = 0; i < numberOfAllButtons; i++) {
+    if ((*allButtons[i]).isPressed()) {
+      (*allButtons[i]).turnLedOn();
+    } else {
+      (*allButtons[i]).turnLedOff();
     }
   }
 }
