@@ -58,7 +58,7 @@ const byte initMode = 1;
 const byte modeCount = 2;
 byte mode = normalMode;
 
-char* modeNames[] = {"Normal-Mode", "Init-Mode"};
+const char* modeNames[] = {"Normal-Mode", "Init-Mode"};
 
 boolean bothBanksDown = false;
 
