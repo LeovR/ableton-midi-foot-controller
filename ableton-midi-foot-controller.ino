@@ -52,7 +52,13 @@ boolean bankUpLastState = false;
 
 byte bank = 0;
 
-boolean initMode = false;
+// Modes
+const byte normalMode = 0;
+const byte initMode = 1;
+const byte modeCount = 2;
+byte mode = normalMode;
+
+char* modeNames[] = {"Normal-Mode", "Init-Mode"};
 
 boolean bothBanksDown = false;
 
@@ -132,9 +138,9 @@ void ledTest() {
 
 void ledTest(byte pin) {
   digitalWrite(pin, HIGH);
-  delay(500);
+  delay(200);
   digitalWrite(pin, LOW);
-  delay(500);
+  delay(200);
 }
 
 void debugButton(Button *button) {
@@ -158,17 +164,14 @@ void updateButtons() {
   }
 }
 
-void sendMidiNotes() {
-  if(!initMode) {
-    return;
-  }
+void sendInitMidiNotes() {
   for (byte i = 0; i < numberOfChannelButtons; i++) {
     if (channelButtons[i].isJustReleased()) {
       usbMIDI.sendNoteOff(i, 0, midiChannel);
-    } else if(channelButtons[i].isJustPressed()) {
+    } else if (channelButtons[i].isJustPressed()) {
       usbMIDI.sendNoteOn(i, 99, midiChannel);
     }
-  }  
+  }
 }
 
 void loop()
@@ -178,6 +181,18 @@ void loop()
   updateButtons();
 
   boolean modeChange = changeMode();
+  if (modeChange) {
+    Serial.println(modeNames[mode]);
+  }
+
+  switch (mode) {
+    case normalMode:
+      handleNormalMode();
+      break;
+    case initMode:
+      handleInitMode();
+      break;
+  }
 
   /*if (!modeChange) {
     changeBank();
@@ -189,20 +204,25 @@ void loop()
 
 }
 
+void handleInitMode() {
+  sendInitMidiNotes();
+  updateInitLeds();
+}
+
+void handleNormalMode() {
+  changeBank();
+}
+
 boolean changeMode() {
   if (bankDownButton.isPressed() && bankUpButton.isPressed()) {
     bothBanksDown = true;
   } else if (bothBanksDown && ((bankDownButton.isJustReleased() && !bankUpButton.isPressed()) || (bankUpButton.isJustReleased() && !bankDownButton.isPressed()))) {
     bothBanksDown = false;
-    initMode = 1 - initMode;
-    if (initMode) {
-      Serial.println("Init mode");
-    } else {
-      Serial.println("Normal mode");
-    }
+    mode++;
+    mode = mode % modeCount;
     return true;
   } else if (bothBanksDown) {
-    return true;
+    return false;
   }
   return false;
 }
