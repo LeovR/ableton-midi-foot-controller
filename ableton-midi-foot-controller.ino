@@ -132,9 +132,9 @@ void ledTest() {
 
 void ledTest(byte pin) {
   digitalWrite(pin, HIGH);
-  delay(200);
+  delay(500);
   digitalWrite(pin, LOW);
-  delay(200);
+  delay(500);
 }
 
 void debugButton(Button *button) {
