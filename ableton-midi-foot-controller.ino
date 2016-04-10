@@ -13,17 +13,29 @@ const byte CLOCK = 248;
 const byte START = 250;
 const byte CONTINUE = 251;
 const byte STOP = 252;
-const int ledPin = 13;
 
-const byte bpmLed = 22;
+// LEDs
+const byte ledPin = 13;
+const byte bpmLed = 17;
+const byte ledPins[] = {10, 11, 12, 14, 15, 16};
+const byte bankDownLed = 22;
+const byte bankUpLed = 23;
+const byte stopLed = 21;
+const byte playLed = 20;
 
+
+// Buttons
 const byte channelButtonStart = 0;
-const byte numberOfChannelButtons = 2;
-const byte ledPins[] = {/*10, 11, 12,*/ 14, 15, 16};
-Button channelButtons[numberOfChannelButtons];
+const byte numberOfChannelButtons = 6;
 
 const byte bankDownPin = 6;
 const byte bankUpPin = 7;
+
+const byte stopPin = 8;
+const byte playPin = 9;
+
+Button channelButtons[numberOfChannelButtons];
+
 Button bankDownButton = Button();
 Button bankUpButton = Button();
 boolean bankDownState;
@@ -31,8 +43,6 @@ boolean bankDownDown;
 boolean bankUpState;
 boolean bankUpDown;
 
-const byte stopPin = 8;
-const byte playPin = 9;
 Button stopButton = Button();
 Button playButton = Button();
 boolean stopState;
@@ -79,15 +89,15 @@ void setupButtons() {
   for (byte i = 0; i < numberOfChannelButtons; i++) {
     channelButtons[i].init(channelButtonStart + i, ledPins[i]);
   }
-  bankDownButton.init(bankDownPin);
-  bankUpButton.init(bankUpPin);
-  stopButton.init(stopPin);
-  playButton.init(playPin);
+  bankDownButton.init(bankDownPin, bankDownLed);
+  bankUpButton.init(bankUpPin, bankUpLed);
+  stopButton.init(stopPin, stopLed);
+  playButton.init(playPin, playLed);
 }
 
 void setupLeds() {
   pinMode(ledPin, OUTPUT);
-  pinMode(bpmLed, OUTPUT);  
+  pinMode(bpmLed, OUTPUT);
 }
 
 
@@ -114,6 +124,10 @@ void ledTest() {
     ledTest(ledPins[i]);
     //    digitalWrite(channelButtonLedStart +i,HIGH);
   }
+  ledTest(bankDownLed);
+  ledTest(bankUpLed);
+  ledTest(stopLed);
+  ledTest(playLed);
 }
 
 void ledTest(byte pin) {
