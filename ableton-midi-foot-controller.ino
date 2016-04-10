@@ -18,6 +18,12 @@ const byte bankUpLed = 23;
 const byte playLed = 20;
 const byte stopLed = 21;
 
+const byte allLeds[] = {ledPin, bpmLed, ledPins[0], ledPins[1], ledPins[2],
+                        ledPins[3], ledPins[4], ledPins[5], bankDownLed, bankUpLed, playLed, stopLed
+                       };
+
+const byte numberOfLeds = 12;
+
 // Buttons
 const byte channelButtonStart = 0;
 const byte numberOfChannelButtons = 6;
@@ -183,6 +189,7 @@ void loop()
   boolean modeChange = changeMode();
   if (modeChange) {
     Serial.println(modeNames[mode]);
+    resetLeds();
   }
 
   switch (mode) {
@@ -262,6 +269,12 @@ void updateInitLeds() {
     } else {
       (*allButtons[i]).turnLedOff();
     }
+  }
+}
+
+void resetLeds() {
+  for (byte i = 0; i < numberOfLeds; i++) {
+    digitalWrite(allLeds[i], LOW);
   }
 }
 
