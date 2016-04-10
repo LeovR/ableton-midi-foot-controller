@@ -1,12 +1,7 @@
 #include "Button.h"
 #include "base64/Base64.h"
 
-#include <Adafruit_GFX.h>
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_SSD1306.h>
-
-#define DEBUG_BUTTONS true
+//#define DEBUG_BUTTONS true
 
 byte counter;
 const byte CLOCK = 248;
@@ -20,9 +15,8 @@ const byte bpmLed = 17;
 const byte ledPins[] = {10, 11, 12, 14, 15, 16};
 const byte bankDownLed = 22;
 const byte bankUpLed = 23;
-const byte stopLed = 21;
 const byte playLed = 20;
-
+const byte stopLed = 21;
 
 // Buttons
 const byte channelButtonStart = 0;
