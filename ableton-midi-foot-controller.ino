@@ -189,6 +189,7 @@ void loop()
   if (modeChange) {
     Serial.println(modeNames[mode]);
     resetLeds();
+    return;
   }
 
   switch (mode) {
