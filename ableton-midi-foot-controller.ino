@@ -126,7 +126,7 @@ void setup()
 
   ledTest();
 
-  Serial.println("start");
+  Serial.println("MIDI Controller");
 }
 
 void ledTest() {
