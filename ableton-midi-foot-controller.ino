@@ -194,6 +194,10 @@ void loop()
     return;
   }
 
+  if (bothBanksDown) {
+    return;
+  }
+
   switch (mode) {
     case normalMode:
       handleNormalMode();
@@ -214,7 +218,7 @@ void changeInitMidiBank() {
   boolean update = false;
   if (bankDownButton.isJustReleased()) {
     initBank--;
-    if(initBank == 255) {
+    if (initBank == 255) {
       initBank = 126;
     }
     update = true;
@@ -223,7 +227,7 @@ void changeInitMidiBank() {
     initBank = initBank % 127;
     update = true;
   }
-  if (update) {    
+  if (update) {
     Serial.print("MIDI offset ");
     Serial.println(initBank);
   }
