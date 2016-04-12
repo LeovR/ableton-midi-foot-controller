@@ -64,6 +64,8 @@ const byte initMode = 1;
 const byte modeCount = 2;
 byte mode = normalMode;
 
+byte initBank = 0;
+
 const char* modeNames[] = {"Normal-Mode", "Init-Mode"};
 
 boolean bothBanksDown = false;
@@ -172,9 +174,9 @@ void updateButtons() {
 void sendInitMidiNotes() {
   for (byte i = 0; i < numberOfChannelButtons; i++) {
     if (channelButtons[i].isJustReleased()) {
-      usbMIDI.sendNoteOff(i, 0, midiChannel);
+      usbMIDI.sendNoteOff(i + (initBank * numberOfChannelButtons), 0, midiChannel);
     } else if (channelButtons[i].isJustPressed()) {
-      usbMIDI.sendNoteOn(i, 99, midiChannel);
+      usbMIDI.sendNoteOn(i + (initBank * numberOfChannelButtons), 99, midiChannel);
     }
   }
 }
@@ -203,8 +205,28 @@ void loop()
 }
 
 void handleInitMode() {
+  changeInitMidiBank();
   sendInitMidiNotes();
   updateInitLeds();
+}
+
+void changeInitMidiBank() {
+  boolean update = false;
+  if (bankDownButton.isJustReleased()) {
+    initBank--;
+    if(initBank == 255) {
+      initBank = 126;
+    }
+    update = true;
+  } else if (bankUpButton.isJustReleased()) {
+    initBank++;
+    initBank = initBank % 127;
+    update = true;
+  }
+  if (update) {    
+    Serial.print("MIDI offset ");
+    Serial.println(initBank);
+  }
 }
 
 void handleNormalMode() {
