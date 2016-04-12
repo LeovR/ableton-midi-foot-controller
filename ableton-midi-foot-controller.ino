@@ -134,7 +134,6 @@ void ledTest() {
   ledTest(bpmLed);
   for (byte i = 0; i < numberOfChannelButtons; i++) {
     ledTest(ledPins[i]);
-    //    digitalWrite(channelButtonLedStart +i,HIGH);
   }
   ledTest(bankDownLed);
   ledTest(bankUpLed);
@@ -200,15 +199,6 @@ void loop()
       handleInitMode();
       break;
   }
-
-  /*if (!modeChange) {
-    changeBank();
-    }
-
-    updateLeds();
-
-    sendMidiNotes();*/
-
 }
 
 void handleInitMode() {
