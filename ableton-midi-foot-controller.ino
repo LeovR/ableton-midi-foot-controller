@@ -1,5 +1,7 @@
 #include "Button.h"
 #include "base64/Base64.h"
+#include <Wire.h>
+#include "NewLiquidCrystal/LiquidCrystal_I2C.h"
 
 //#define DEBUG_BUTTONS true
 
@@ -23,6 +25,9 @@ const byte allLeds[] = {ledPin, bpmLed, ledPins[0], ledPins[1], ledPins[2],
                        };
 
 const byte numberOfLeds = 12;
+
+// LCD
+LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 // Buttons
 const byte channelButtonStart = 0;
@@ -121,6 +126,9 @@ void setup()
   setupLeds();
 
   Serial.begin(9600);
+
+  setupLcd();
+
   usbMIDI.setHandleNoteOff(OnNoteOff);
   usbMIDI.setHandleNoteOn(OnNoteOn);
   usbMIDI.setHandleRealTimeSystem(RealTimeSystem);
@@ -128,7 +136,20 @@ void setup()
 
   ledTest();
 
-  Serial.println("MIDI Controller");
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("MIDI Controller");
+}
+
+void setupLcd() {
+  lcd.begin(16, 2);
+  for (int i = 0; i < 3; i++) {
+    lcd.backlight();
+    delay(250);
+    lcd.noBacklight();
+    delay(250);
+  }
+  lcd.backlight();
 }
 
 void ledTest() {
@@ -141,6 +162,17 @@ void ledTest() {
   ledTest(bankUpLed);
   ledTest(stopLed);
   ledTest(playLed);
+  allLedsTest();
+}
+
+void allLedsTest() {
+  for (int i = 0; i < numberOfLeds; i++) {
+    digitalWrite(allLeds[i], HIGH);
+  }
+  delay(500);
+  for (int i = 0; i < numberOfLeds; i++) {
+    digitalWrite(allLeds[i], LOW);
+  }
 }
 
 void ledTest(byte pin) {
@@ -302,10 +334,6 @@ void RealTimeSystem(byte realtimebyte) {
       counter = 0;
       digitalWrite(bpmLed, HIGH);
     }
-    if (counter == 22) {
-      digitalWrite(bpmLed, HIGH);
-    }
-
     if (counter == 6) {
       digitalWrite(bpmLed, LOW);
     }
