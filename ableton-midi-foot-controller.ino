@@ -90,12 +90,12 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
   unsigned int realSize = size - 5;
 
   int decodedLen = base64_dec_len((char*)dataArray, realSize);
-  Serial.println(decodedLen);
   char decoded[decodedLen];
 
   base64_decode(decoded, (char*)dataArray, realSize);
 
-  Serial.println(decoded);
+  lcd.clear();
+  lcd.print(decoded);
 
 }
 
@@ -348,4 +348,5 @@ void RealTimeSystem(byte realtimebyte) {
     digitalWrite(bpmLed, LOW);
   }
 }
+
 
