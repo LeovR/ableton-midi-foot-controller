@@ -91,6 +91,8 @@ const byte midiChannel = 1;
 const byte SONG_CONFIGURATION = 0;
 const byte CONFIGURATION_START = 1;
 const byte CONFIGURATION_FINISHED = 2;
+const byte CURRENT_PART = 3;
+const byte NEXT_PART = 4;
 
 const byte SONG_OFFSET = 10;
 
@@ -138,8 +140,38 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
       case CONFIGURATION_FINISHED:
         handleConfigurationFinished();
         break;
+      case CURRENT_PART:
+        handleCurrentPart(decoded + 4);
+        break;
+      case NEXT_PART:
+        handleNextPart(decoded + 4);
+        break;
     }
   }
+}
+
+void handleCurrentPart(char* message) {
+  if (mode != SONG_MODE) {
+    return;
+  }
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(message);
+}
+
+void clearLine(byte line) {
+  lcd.setCursor(0, line);
+  lcd.print(F("                "));
+}
+
+void handleNextPart(char* message) {
+  if (mode != SONG_MODE) {
+    return;
+  }
+
+  clearLine(1);
+  lcd.setCursor(0, 1);
+  lcd.print(message);
 }
 
 void handleConfigurationStart() {
@@ -211,6 +243,10 @@ byte getConfigurationType(char* messageOriginal) {
     return CONFIGURATION_START;
   } else if (strcmp(strings , "CF") == 0) {
     return CONFIGURATION_FINISHED;
+  } else if (strcmp(strings, "CP") == 0) {
+    return CURRENT_PART;
+  } else if (strcmp(strings, "NP") == 0) {
+    return NEXT_PART;
   }
   return -1;
 }
@@ -539,7 +575,7 @@ void resetLeds() {
 void RealTimeSystem(byte realtimebyte) {
   if (realtimebyte == CLOCK) {
     counter++;
-    if (counter >= 23) {
+    if (counter == 24) {
       counter = 0;
       digitalWrite(bpmLed, HIGH);
     }
@@ -561,7 +597,7 @@ void RealTimeSystem(byte realtimebyte) {
   if (realtimebyte == STOP) {
     digitalWrite(bpmLed, LOW);
     playing = false;
+    changeMode(NORMAL_MODE);
   }
 }
-
 
