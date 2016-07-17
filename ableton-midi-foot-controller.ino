@@ -75,7 +75,11 @@ byte mode = normalMode;
 
 byte initBank = 0;
 
-const char* modeNames[] = {"Normal-Mode", "Init-Mode"};
+const char mode_0[] PROGMEM = "Normal-Mode";
+const char mode_1[] PROGMEM = "Init-Mode";
+const char* const modeNames[] PROGMEM = {mode_0, mode_1};
+
+const char displayName[] PROGMEM = "MIDI Controller";
 
 boolean bothBanksDown = false;
 
@@ -197,7 +201,7 @@ void setup()
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("MIDI Controller");
+  lcd.print(displayName);
   allLedsTest();
 }
 
