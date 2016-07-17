@@ -98,6 +98,9 @@ char* songs[numberOfSongs];
 
 byte selectedSong = -1;
 
+byte midiNoteToSend = -1;
+elapsedMillis midiNoteSendStart = 0;
+boolean startedMidiNoteSending = false;
 
 void OnNoteOn(byte channel, byte note, byte velocity) {
   digitalWrite(ledPin, HIGH);
@@ -337,6 +340,20 @@ void sendInitMidiNotes() {
   }
 }
 
+
+void sendMidiNote() {
+  if(midiNoteToSend!=-1) {
+    if(midiNoteSendStart > 100) {
+      usbMIDI.sendNoteOff(midiNoteToSend, 0, midiChannel);
+      midiNoteToSend = -1;
+      startedMidiNoteSending = false;
+    } else if(!startedMidiNoteSending) {
+      usbMIDI.sendNoteOn(midiNoteToSend, 99, midiChannel);
+      startedMidiNoteSending = true;
+    }    
+  }
+}
+
 void loop()
 {
   usbMIDI.read();
@@ -390,7 +407,10 @@ void changeInitMidiBank() {
 }
 
 void handleNormalMode(boolean forceUpdate) {
-  changeBank();
+  boolean bankChange = changeBank();
+  if (bankChange) {
+    selectedSong = 0;
+  }
   boolean update = false;
   for (byte i = 0; i < numberOfChannelButtons; i++) {
     if (channelButtons[i].isJustReleased()) {
@@ -400,17 +420,29 @@ void handleNormalMode(boolean forceUpdate) {
   }
 
 
-  if (update || forceUpdate) {
+  if (update || forceUpdate || bankChange) {
     for (byte i = 0; i < numberOfChannelButtons; i++) {
       channelButtons[i].turnLedOff();
     }
     channelButtons[selectedSong].turnLedOn();
     char* song = songs[selectedSong + (bank * numberOfChannelButtons)];
+    lcd.clear();
     if (song) {
-      lcd.clear();
       lcd.print(song);
     }
   }
+
+  if(playButton.isJustPressed()) {
+    playButton.turnLedOn();
+  }
+
+  if(playButton.isJustReleased()) {
+    midiNoteSendStart = 0;
+    midiNoteToSend = selectedSong + (bank * numberOfChannelButtons) + SONG_OFFSET;
+    playButton.turnLedOff();
+  }
+
+  sendMidiNote();
 }
 
 void handleNormalMode() {
@@ -431,7 +463,7 @@ boolean changeMode() {
   return false;
 }
 
-void changeBank() {
+boolean changeBank() {
   boolean update = false;
   if (bankDownButton.isJustReleased()) {
     bank--;
@@ -448,19 +480,7 @@ void changeBank() {
     Serial.print(F("Bank "));
     Serial.println(bank);
   }
-}
-
-void updateLeds() {
-  /*if(initMode) {
-    return;
-    }
-    for (byte i = 0; i < numberOfChannelButtons; i++) {
-    if (channelButtons[i].isJustReleased()) {
-      digitalWrite(ledPins[i], HIGH);
-    } else {
-      digitalWrite(ledPins[i], LOW);
-    }
-    }*/
+  return update;
 }
 
 void updateInitLeds() {
