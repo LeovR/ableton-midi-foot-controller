@@ -4,6 +4,8 @@
 #include "NewLiquidCrystal/LiquidCrystal_I2C.h"
 
 //#define DEBUG_BUTTONS true
+//#define SINGLE_LED_TEST true
+//#define LCD_TEST true
 
 byte counter;
 const byte CLOCK = 248;
@@ -134,15 +136,21 @@ void setup()
   usbMIDI.setHandleRealTimeSystem(RealTimeSystem);
   usbMIDI.setHandleSysEx(SystemExclusiveMessage);
 
+#ifdef LCD_TEST
+  lcdTest();
+#endif
+#ifdef SINGLE_LED_TEST
   ledTest();
+#endif
 
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("MIDI Controller");
+  allLedsTest();
 }
 
-void setupLcd() {
-  lcd.begin(16, 2);
+#ifdef LCD_TEST
+void lcdTest() {
   for (int i = 0; i < 3; i++) {
     lcd.backlight();
     delay(250);
@@ -151,7 +159,14 @@ void setupLcd() {
   }
   lcd.backlight();
 }
+#endif
 
+void setupLcd() {
+  lcd.begin(16, 2);
+  lcd.backlight();
+}
+
+#ifdef SINGLE_LED_TEST
 void ledTest() {
   ledTest(ledPin);
   ledTest(bpmLed);
@@ -162,14 +177,14 @@ void ledTest() {
   ledTest(bankUpLed);
   ledTest(stopLed);
   ledTest(playLed);
-  allLedsTest();
 }
+#endif
 
 void allLedsTest() {
   for (int i = 0; i < numberOfLeds; i++) {
     digitalWrite(allLeds[i], HIGH);
   }
-  delay(500);
+  delay(1000);
   for (int i = 0; i < numberOfLeds; i++) {
     digitalWrite(allLeds[i], LOW);
   }
@@ -177,9 +192,9 @@ void allLedsTest() {
 
 void ledTest(byte pin) {
   digitalWrite(pin, HIGH);
-  delay(200);
+  delay(150);
   digitalWrite(pin, LOW);
-  delay(200);
+  delay(150);
 }
 
 void debugButton(Button *button) {
