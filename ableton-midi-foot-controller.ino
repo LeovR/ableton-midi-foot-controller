@@ -187,7 +187,7 @@ void handleSongConfiguration(char* messageOriginal) {
   Serial.println(strings);
 #endif
 
-  songs[index - 1] = strings;
+  songs[index] = strings;
 }
 
 byte getConfigurationType(char* messageOriginal) {
