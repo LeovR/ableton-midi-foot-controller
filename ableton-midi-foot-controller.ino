@@ -72,7 +72,8 @@ const byte numberOfBanks = 5;
 const byte UNCONFIGURED = 0;
 const byte NORMAL_MODE = 1;
 const byte INIT_MODE = 2;
-const byte modeCount = 3;
+const byte SONG_MODE = 3;
+const byte modeCount = 4;
 byte mode = UNCONFIGURED;
 
 byte initBank = 0;
@@ -103,6 +104,8 @@ const byte STOP_MIDI_NOTE = 0;
 byte midiNoteToSend = -1;
 elapsedMillis midiNoteSendStart = 0;
 boolean startedMidiNoteSending = false;
+
+boolean playing = false;
 
 void OnNoteOn(byte channel, byte note, byte velocity) {
   digitalWrite(ledPin, HIGH);
@@ -164,9 +167,8 @@ void handleConfigurationFinished() {
   allLedsTest();
   lcd.clear();
 
-  mode = NORMAL_MODE;
+  changeMode(NORMAL_MODE);
   selectedSong = 0;
-  handleNormalMode(true);
 }
 
 void handleSongConfiguration(char* messageOriginal) {
@@ -344,15 +346,15 @@ void sendInitMidiNotes() {
 
 
 void sendMidiNote() {
-  if(midiNoteToSend!=-1) {
-    if(midiNoteSendStart > 100) {
+  if (midiNoteToSend != -1) {
+    if (midiNoteSendStart > 100) {
       usbMIDI.sendNoteOff(midiNoteToSend, 0, midiChannel);
       midiNoteToSend = -1;
       startedMidiNoteSending = false;
-    } else if(!startedMidiNoteSending) {
+    } else if (!startedMidiNoteSending) {
       usbMIDI.sendNoteOn(midiNoteToSend, 99, midiChannel);
       startedMidiNoteSending = true;
-    }    
+    }
   }
 }
 
@@ -380,6 +382,38 @@ void loop()
     case INIT_MODE:
       handleInitMode();
       break;
+    case SONG_MODE:
+      handleSongMode();
+      break;
+  }
+}
+
+void handleSongMode() {
+  if (playing) {
+    playButton.turnLedOn();
+  } else {
+    playButton.turnLedOff();
+  }
+
+  if (stopButton.isJustPressed()) {
+    stopButton.turnLedOn();
+  }
+
+  if (stopButton.isJustReleased()) {
+    midiNoteSendStart = 0;
+    midiNoteToSend = STOP_MIDI_NOTE;
+    stopButton.turnLedOff();
+    changeMode(NORMAL_MODE);
+  }
+
+  sendMidiNote();
+}
+
+void changeMode(byte newMode) {
+  mode = newMode;
+  resetLeds();
+  if (mode == NORMAL_MODE) {
+    handleNormalMode(true);
   }
 }
 
@@ -433,23 +467,16 @@ void handleNormalMode(boolean forceUpdate) {
     }
   }
 
-  if(playButton.isJustPressed()) {
+  if (playButton.isJustPressed()) {
     playButton.turnLedOn();
   }
 
-  if(stopButton.isJustPressed()) {
-    stopButton.turnLedOn();
-  }
 
-  if(playButton.isJustReleased()) {
+
+  if (playButton.isJustReleased()) {
     midiNoteSendStart = 0;
     midiNoteToSend = selectedSong + (bank * numberOfChannelButtons) + SONG_OFFSET;
     playButton.turnLedOff();
-  }
-  if(stopButton.isJustReleased()) {
-    midiNoteSendStart = 0;
-    midiNoteToSend = STOP_MIDI_NOTE;
-    stopButton.turnLedOff();
   }
 
   sendMidiNote();
@@ -512,11 +539,11 @@ void resetLeds() {
 void RealTimeSystem(byte realtimebyte) {
   if (realtimebyte == CLOCK) {
     counter++;
-    if (counter == 24) {
+    if (counter >= 23) {
       counter = 0;
       digitalWrite(bpmLed, HIGH);
     }
-    if (counter == 6) {
+    if (counter == 5) {
       digitalWrite(bpmLed, LOW);
     }
   }
@@ -526,8 +553,14 @@ void RealTimeSystem(byte realtimebyte) {
     digitalWrite(bpmLed, HIGH);
   }
 
+  if (realtimebyte == START) {
+    playing = true;
+    changeMode(SONG_MODE);
+  }
+
   if (realtimebyte == STOP) {
     digitalWrite(bpmLed, LOW);
+    playing = false;
   }
 }
 
