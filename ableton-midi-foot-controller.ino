@@ -98,6 +98,8 @@ char* songs[numberOfSongs];
 
 byte selectedSong = -1;
 
+const byte STOP_MIDI_NOTE = 0;
+
 byte midiNoteToSend = -1;
 elapsedMillis midiNoteSendStart = 0;
 boolean startedMidiNoteSending = false;
@@ -419,7 +421,6 @@ void handleNormalMode(boolean forceUpdate) {
     }
   }
 
-
   if (update || forceUpdate || bankChange) {
     for (byte i = 0; i < numberOfChannelButtons; i++) {
       channelButtons[i].turnLedOff();
@@ -436,10 +437,19 @@ void handleNormalMode(boolean forceUpdate) {
     playButton.turnLedOn();
   }
 
+  if(stopButton.isJustPressed()) {
+    stopButton.turnLedOn();
+  }
+
   if(playButton.isJustReleased()) {
     midiNoteSendStart = 0;
     midiNoteToSend = selectedSong + (bank * numberOfChannelButtons) + SONG_OFFSET;
     playButton.turnLedOff();
+  }
+  if(stopButton.isJustReleased()) {
+    midiNoteSendStart = 0;
+    midiNoteToSend = STOP_MIDI_NOTE;
+    stopButton.turnLedOff();
   }
 
   sendMidiNote();
