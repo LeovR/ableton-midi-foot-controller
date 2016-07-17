@@ -6,7 +6,7 @@
 //#define DEBUG_BUTTONS true
 //#define SINGLE_LED_TEST true
 //#define LCD_TEST true
-#define SONG_CONFIGURATION_DEBUG true
+//#define SONG_CONFIGURATION_DEBUG true
 
 byte counter;
 const byte CLOCK = 248;
