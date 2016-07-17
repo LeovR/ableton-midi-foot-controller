@@ -6,6 +6,7 @@
 //#define DEBUG_BUTTONS true
 //#define SINGLE_LED_TEST true
 //#define LCD_TEST true
+#define SONG_CONFIGURATION_DEBUG true
 
 byte counter;
 const byte CLOCK = 248;
@@ -68,10 +69,11 @@ byte bank = 0;
 const byte numberOfBanks = 5;
 
 // Modes
-const byte normalMode = 0;
-const byte initMode = 1;
-const byte modeCount = 2;
-byte mode = normalMode;
+const byte UNCONFIGURED = 0;
+const byte NORMAL_MODE = 1;
+const byte INIT_MODE = 2;
+const byte modeCount = 3;
+byte mode = UNCONFIGURED;
 
 byte initBank = 0;
 
@@ -86,11 +88,15 @@ boolean bothBanksDown = false;
 const byte midiChannel = 1;
 
 const byte SONG_CONFIGURATION = 0;
+const byte CONFIGURATION_START = 1;
+const byte CONFIGURATION_FINISHED = 2;
 
 const byte SONG_OFFSET = 10;
 
-const byte numberOfSongs = 128 - SONG_OFFSET;
+const byte numberOfSongs = 30;
 char* songs[numberOfSongs];
+
+byte selectedSong = -1;
 
 
 void OnNoteOn(byte channel, byte note, byte velocity) {
@@ -110,49 +116,94 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
 
   base64_decode(decoded, (char*)dataArray, realSize);
 
-  String messageString = String(decoded);
+  boolean isConfigurationMessage = strchr(decoded, '{') != NULL;
 
-  boolean isConfigurationMessage = messageString.indexOf('{') != -1 && messageString.indexOf('}') != -1;
-
-  lcd.clear();
-  lcd.print(messageString);
   if (isConfigurationMessage) {
-    byte configurationType = getConfigurationType(messageString);
+    byte configurationType = getConfigurationType(decoded + 1);
     switch (configurationType) {
       case SONG_CONFIGURATION:
-        handleSongConfiguration(messageString);
+        handleSongConfiguration(decoded + 4);
+        break;
+      case CONFIGURATION_START:
+        handleConfigurationStart();
+        break;
+      case CONFIGURATION_FINISHED:
+        handleConfigurationFinished();
         break;
     }
   }
-
 }
 
-void handleSongConfiguration(String message) {
-  byte indexStart = message.indexOf('}') + 1;
-  byte index = message.substring(message.indexOf('{', indexStart) + 1, message.indexOf('}', indexStart)).toInt();
-  Serial.print(index);
-  Serial.print(" ");
-  byte songStart = message.indexOf('}', indexStart) + 1;
-  String song = message.substring(message.indexOf('{', songStart) + 1, message.indexOf('}', songStart));
-  Serial.println(song);
-  int strLen = song.length() + 1;
-  char charArray[strLen];
-  song.toCharArray(charArray, strLen);
-  songs[index] = charArray;
+void handleConfigurationStart() {
+  lcd.clear();
+  lcd.print(F("Configuration"));
+  lcd.setCursor(0, 1);
+  lcd.print(F("start"));
+}
 
+void handleConfigurationFinished() {
+#ifdef SONG_CONFIGURATION_DEBUG
   for (byte i = 0; i < numberOfSongs; i++) {
     if (songs[i]) {
       Serial.print(i);
-      Serial.print(" ");
+      Serial.print(F(" "));
       Serial.println(songs[i]);
     }
   }
+#endif
+  lcd.clear();
+  lcd.print(F("Configuration"));
+  lcd.setCursor(0, 1);
+  lcd.print(F("finished"));
+
+  allLedsTest();
+  lcd.clear();
+
+  mode = NORMAL_MODE;
+  selectedSong = 0;
+  handleNormalMode(true);
 }
 
-byte getConfigurationType(String message) {
-  String configurationString = message.substring(message.indexOf('{') + 1, message.indexOf('}'));
-  if (configurationString.equals("C")) {
+void handleSongConfiguration(char* messageOriginal) {
+  char* message = (char*)calloc(strlen(messageOriginal) + 1, sizeof(char));
+  strcpy(message, messageOriginal);
+  char* strings;
+  strings = strtok(message, "|");
+  if (strings == NULL) {
+    return;
+  }
+
+  byte index = atoi(strings);
+
+  strings = strtok(NULL, "|");
+  if (strings == NULL) {
+    return;
+  }
+
+#ifdef SONG_CONFIGURATION_DEBUG
+  Serial.print(F("Received song configuration "));
+  Serial.print(index);
+  Serial.print(F(" "));
+  Serial.println(strings);
+#endif
+
+  songs[index - 1] = strings;
+}
+
+byte getConfigurationType(char* messageOriginal) {
+  char* message = (char*)calloc(strlen(messageOriginal) + 1, sizeof(char));
+  strcpy(message, messageOriginal);
+  char* strings;
+  strings = strtok(message, "|");
+  if (strings == NULL) {
+    return -1;
+  }
+  if (strcmp(strings , "SC") == 0) {
     return SONG_CONFIGURATION;
+  } else if (strcmp(strings , "CS") == 0) {
+    return CONFIGURATION_START;
+  } else if (strcmp(strings , "CF") == 0) {
+    return CONFIGURATION_FINISHED;
   }
   return -1;
 }
@@ -255,13 +306,13 @@ void ledTest(byte pin) {
 
 void debugButton(Button *button) {
 #ifdef DEBUG_BUTTONS
-  Serial.print("Button: ");
+  Serial.print(F("Button: "));
   Serial.print((*button).getPin());
-  Serial.print(" Just pressed: ");
+  Serial.print(F(" Just pressed: "));
   Serial.print((*button).isJustPressed());
-  Serial.print(" Pressed: ");
+  Serial.print(F(" Pressed: "));
   Serial.print((*button).isPressed());
-  Serial.print(" Just released : ");
+  Serial.print(F(" Just released : "));
   Serial.println((*button).isJustReleased());
 #endif
 }
@@ -280,6 +331,8 @@ void sendInitMidiNotes() {
       usbMIDI.sendNoteOff(i + (initBank * numberOfChannelButtons), 0, midiChannel);
     } else if (channelButtons[i].isJustPressed()) {
       usbMIDI.sendNoteOn(i + (initBank * numberOfChannelButtons), 99, midiChannel);
+      Serial.print(F("Midi-Note "));
+      Serial.println(i + (initBank * numberOfChannelButtons));
     }
   }
 }
@@ -302,10 +355,10 @@ void loop()
   }
 
   switch (mode) {
-    case normalMode:
+    case NORMAL_MODE:
       handleNormalMode();
       break;
-    case initMode:
+    case INIT_MODE:
       handleInitMode();
       break;
   }
@@ -331,13 +384,37 @@ void changeInitMidiBank() {
     update = true;
   }
   if (update) {
-    Serial.print("MIDI offset ");
+    Serial.print(F("MIDI offset "));
     Serial.println(initBank);
   }
 }
 
-void handleNormalMode() {
+void handleNormalMode(boolean forceUpdate) {
   changeBank();
+  boolean update = false;
+  for (byte i = 0; i < numberOfChannelButtons; i++) {
+    if (channelButtons[i].isJustReleased()) {
+      update = selectedSong != i;
+      selectedSong = i;
+    }
+  }
+
+
+  if (update || forceUpdate) {
+    for (byte i = 0; i < numberOfChannelButtons; i++) {
+      channelButtons[i].turnLedOff();
+    }
+    channelButtons[selectedSong].turnLedOn();
+    char* song = songs[selectedSong + (bank * numberOfChannelButtons)];
+    if (song) {
+      lcd.clear();
+      lcd.print(song);
+    }
+  }
+}
+
+void handleNormalMode() {
+  handleNormalMode(false);
 }
 
 boolean changeMode() {
