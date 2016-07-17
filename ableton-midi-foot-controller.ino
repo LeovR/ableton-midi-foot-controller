@@ -65,6 +65,8 @@ boolean bankUpLastState = false;
 
 byte bank = 0;
 
+const byte numberOfBanks = 5;
+
 // Modes
 const byte normalMode = 0;
 const byte initMode = 1;
@@ -353,12 +355,16 @@ void changeBank() {
   if (bankDownButton.isJustReleased()) {
     bank--;
     update = true;
+    if (bank == 255) {
+      bank = numberOfBanks - 1 ;
+    }
   } else if (bankUpButton.isJustReleased()) {
     bank++;
+    bank = bank % numberOfBanks;
     update = true;
   }
   if (update) {
-    Serial.print("Bank ");
+    Serial.print(F("Bank "));
     Serial.println(bank);
   }
 }
