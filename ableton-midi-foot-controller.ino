@@ -79,6 +79,14 @@ boolean bothBanksDown = false;
 
 const byte midiChannel = 1;
 
+const byte SONG_CONFIGURATION = 0;
+
+const byte SONG_OFFSET = 10;
+
+const byte numberOfSongs = 128 - SONG_OFFSET;
+char* songs[numberOfSongs];
+
+
 void OnNoteOn(byte channel, byte note, byte velocity) {
   digitalWrite(ledPin, HIGH);
 }
@@ -96,9 +104,51 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
 
   base64_decode(decoded, (char*)dataArray, realSize);
 
-  lcd.clear();
-  lcd.print(decoded);
+  String messageString = String(decoded);
 
+  boolean isConfigurationMessage = messageString.indexOf('{') != -1 && messageString.indexOf('}') != -1;
+
+  lcd.clear();
+  lcd.print(messageString);
+  if (isConfigurationMessage) {
+    byte configurationType = getConfigurationType(messageString);
+    switch (configurationType) {
+      case SONG_CONFIGURATION:
+        handleSongConfiguration(messageString);
+        break;
+    }
+  }
+
+}
+
+void handleSongConfiguration(String message) {
+  byte indexStart = message.indexOf('}') + 1;
+  byte index = message.substring(message.indexOf('{', indexStart) + 1, message.indexOf('}', indexStart)).toInt();
+  Serial.print(index);
+  Serial.print(" ");
+  byte songStart = message.indexOf('}', indexStart) + 1;
+  String song = message.substring(message.indexOf('{', songStart) + 1, message.indexOf('}', songStart));
+  Serial.println(song);
+  int strLen = song.length() + 1;
+  char charArray[strLen];
+  song.toCharArray(charArray, strLen);
+  songs[index] = charArray;
+
+  for (byte i = 0; i < numberOfSongs; i++) {
+    if (songs[i]) {
+      Serial.print(i);
+      Serial.print(" ");
+      Serial.println(songs[i]);
+    }
+  }
+}
+
+byte getConfigurationType(String message) {
+  String configurationString = message.substring(message.indexOf('{') + 1, message.indexOf('}'));
+  if (configurationString.equals("C")) {
+    return SONG_CONFIGURATION;
+  }
+  return -1;
 }
 
 void setupButtons() {
