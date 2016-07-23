@@ -28,6 +28,7 @@ class Button {
     byte getPin();
     void turnLedOn();
     void turnLedOff();
+    boolean isLedTurnedOn();
 
   private:
     // Private Attributes
@@ -38,6 +39,7 @@ class Button {
     boolean _justReleased;
     boolean _justPressed;
     boolean _pressed;
+    boolean _ledOn;
     // Private Functions
 
 

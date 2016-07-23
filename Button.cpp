@@ -76,12 +76,18 @@ byte Button::getPin() {
 void Button::turnLedOn() {
     if(_led) {
         digitalWrite(_led, HIGH);
+        _ledOn = true;
     }
 }
 
 void Button::turnLedOff() {
     if(_led) {
         digitalWrite(_led, LOW);
+        _ledOn = false;
     }
+}
+
+boolean Button::isLedTurnedOn() {
+  return _ledOn;
 }
 
