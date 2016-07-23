@@ -117,7 +117,7 @@ double fullDenominator;
 boolean nextPartScheduled = false;
 
 boolean repeat = false;
-elapsedMillis repeatEllapsed = 0;
+elapsedMillis repeatElapsed = 0;
 
 void OnNoteOn(byte channel, byte note, byte velocity) {
   digitalWrite(ledPin, HIGH);
@@ -493,16 +493,16 @@ void handleSongMode() {
 
   if (playButton.isJustReleased()) {
     repeat = !repeat;
-    repeatEllapsed = 0;
+    repeatElapsed = 0;
   }
 
-  if (repeat && repeatEllapsed > 300) {
+  if (repeat && repeatElapsed > 300) {
     if (playButton.isLedTurnedOn()) {
       playButton.turnLedOff();
     } else {
       playButton.turnLedOn();
     }
-    repeatEllapsed = 0;
+    repeatElapsed = 0;
   }
 
   sendMidiNote();
