@@ -675,6 +675,7 @@ void RealTimeSystem(byte realtimebyte) {
   if (realtimebyte == START) {
     playing = true;
     repeat = false;
+    fullDenominator = 0;
     changeMode(SONG_MODE);
   }
 
