@@ -93,6 +93,7 @@ const byte CONFIGURATION_START = 1;
 const byte CONFIGURATION_FINISHED = 2;
 const byte CURRENT_PART = 3;
 const byte NEXT_PART = 4;
+const byte SONG_SIGNATURE = 5;
 
 const byte SONG_OFFSET = 10;
 
@@ -108,6 +109,15 @@ elapsedMillis midiNoteSendStart = 0;
 boolean startedMidiNoteSending = false;
 
 boolean playing = false;
+byte numerator;
+byte denominator;
+byte bars;
+double fullDenominator;
+
+boolean nextPartScheduled = false;
+
+boolean repeat = false;
+elapsedMillis repeatEllapsed = 0;
 
 void OnNoteOn(byte channel, byte note, byte velocity) {
   digitalWrite(ledPin, HIGH);
@@ -146,6 +156,9 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
       case NEXT_PART:
         handleNextPart(decoded + 4);
         break;
+      case SONG_SIGNATURE:
+        handleSongSignature(decoded + 4);
+        break;
     }
   }
 }
@@ -157,6 +170,32 @@ void handleCurrentPart(char* message) {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(message);
+}
+
+void handleSongSignature(char* messageOriginal) {
+  if (mode != SONG_MODE) {
+    return;
+  }
+
+  char* message = (char*)calloc(strlen(messageOriginal) + 1, sizeof(char));
+  strcpy(message, messageOriginal);
+  char* strings;
+  strings = strtok(message, "|");
+  if (strings == NULL) {
+    return;
+  }
+
+  byte numeratorTemp = atoi(strings);
+
+  strings = strtok(NULL, "|");
+  if (strings == NULL) {
+    return;
+  }
+
+  byte denominatorTemp = atoi(strings);
+  numerator = numeratorTemp;
+  denominator = denominatorTemp;
+
 }
 
 void clearLine(byte line) {
@@ -247,6 +286,8 @@ byte getConfigurationType(char* messageOriginal) {
     return CURRENT_PART;
   } else if (strcmp(strings, "NP") == 0) {
     return NEXT_PART;
+  } else if (strcmp(strings, "SS") == 0) {
+    return SONG_SIGNATURE;
   }
   return -1;
 }
