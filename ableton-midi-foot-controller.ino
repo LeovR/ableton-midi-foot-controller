@@ -100,9 +100,12 @@ const byte SONG_OFFSET = 10;
 const byte numberOfSongs = 30;
 char* songs[numberOfSongs];
 
+const byte CONTROL_OFFSET = SONG_OFFSET + numberOfSongs + 1;
+
 byte selectedSong = -1;
 
 const byte STOP_MIDI_NOTE = 0;
+const byte REPEAT_MIDI_NOTE = CONTROL_OFFSET;
 
 byte midiNoteToSend = -1;
 elapsedMillis midiNoteSendStart = 0;
@@ -494,6 +497,8 @@ void handleSongMode() {
   if (playButton.isJustReleased()) {
     repeat = !repeat;
     repeatElapsed = 0;
+    midiNoteSendStart = 0;
+    midiNoteToSend = REPEAT_MIDI_NOTE;
   }
 
   if (repeat && repeatElapsed > 300) {
