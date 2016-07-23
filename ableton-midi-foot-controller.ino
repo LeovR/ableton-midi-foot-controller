@@ -167,6 +167,10 @@ void handleCurrentPart(char* message) {
   if (mode != SONG_MODE) {
     return;
   }
+
+  nextPartScheduled = false;
+  bars = 0;
+
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(message);
@@ -208,6 +212,8 @@ void handleNextPart(char* message) {
     return;
   }
 
+  nextPartScheduled = true;
+
   clearLine(1);
   lcd.setCursor(0, 1);
   lcd.print(message);
@@ -238,8 +244,8 @@ void handleConfigurationFinished() {
   allLedsTest();
   lcd.clear();
 
-  changeMode(NORMAL_MODE);
   selectedSong = 0;
+  changeMode(NORMAL_MODE);
 }
 
 void handleSongConfiguration(char* messageOriginal) {
@@ -479,7 +485,7 @@ void handleSongMode() {
   if (stopButton.isJustReleased()) {
     midiNoteSendStart = 0;
     midiNoteToSend = STOP_MIDI_NOTE;
-    stopButton.turnLedOff();
+    bars = 0;
     changeMode(NORMAL_MODE);
   }
 
@@ -548,8 +554,6 @@ void handleNormalMode(boolean forceUpdate) {
     playButton.turnLedOn();
   }
 
-
-
   if (playButton.isJustReleased()) {
     midiNoteSendStart = 0;
     midiNoteToSend = selectedSong + (bank * numberOfChannelButtons) + SONG_OFFSET;
@@ -613,9 +617,31 @@ void resetLeds() {
   }
 }
 
+void handleBarChange() {
+  if (mode != SONG_MODE || nextPartScheduled) {
+    return;
+  }
+  clearLine(1);
+  lcd.setCursor(0, 1);
+  lcd.print(bars);
+  lcd.print(" bars");
+}
+
 void RealTimeSystem(byte realtimebyte) {
   if (realtimebyte == CLOCK) {
     counter++;
+
+    if (denominator > 0) {
+      double increase = (1 / 24.0) * (denominator / 4.0);
+      fullDenominator = fullDenominator + increase;
+
+      if (fullDenominator >= numerator && numerator > 0) {
+        fullDenominator = 0;
+        bars++;
+        handleBarChange();
+      }
+    }
+
     if (counter == 24) {
       counter = 0;
       digitalWrite(bpmLed, HIGH);
@@ -638,6 +664,7 @@ void RealTimeSystem(byte realtimebyte) {
   if (realtimebyte == STOP) {
     digitalWrite(bpmLed, LOW);
     playing = false;
+    bars = 0;
     changeMode(NORMAL_MODE);
   }
 }
