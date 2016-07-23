@@ -122,6 +122,8 @@ boolean nextPartScheduled = false;
 boolean repeat = false;
 elapsedMillis repeatElapsed = 0;
 
+elapsedMillis triggeredElapsed = 0;
+
 void OnNoteOn(byte channel, byte note, byte velocity) {
   digitalWrite(ledPin, HIGH);
 }
@@ -216,6 +218,7 @@ void handleNextPart(char* message) {
   }
 
   nextPartScheduled = true;
+  triggeredElapsed = 0;
 
   clearLine(1);
   lcd.setCursor(0, 1);
@@ -508,6 +511,19 @@ void handleSongMode() {
       playButton.turnLedOn();
     }
     repeatElapsed = 0;
+  }
+
+  if (!nextPartScheduled) {
+    bankUpButton.turnLedOff();
+  }
+
+  if (triggeredElapsed > 200 && nextPartScheduled) {
+    if (bankUpButton.isLedTurnedOn()) {
+      bankUpButton.turnLedOff();
+    } else {
+      bankUpButton.turnLedOn();
+    }
+    triggeredElapsed = 0;
   }
 
   sendMidiNote();
