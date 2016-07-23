@@ -472,10 +472,12 @@ void loop()
 }
 
 void handleSongMode() {
-  if (playing) {
-    playButton.turnLedOn();
-  } else {
-    playButton.turnLedOff();
+  if (!repeat) {
+    if (playing) {
+      playButton.turnLedOn();
+    } else {
+      playButton.turnLedOff();
+    }
   }
 
   if (stopButton.isJustPressed()) {
@@ -487,6 +489,20 @@ void handleSongMode() {
     midiNoteToSend = STOP_MIDI_NOTE;
     bars = 0;
     changeMode(NORMAL_MODE);
+  }
+
+  if (playButton.isJustReleased()) {
+    repeat = !repeat;
+    repeatEllapsed = 0;
+  }
+
+  if (repeat && repeatEllapsed > 300) {
+    if (playButton.isLedTurnedOn()) {
+      playButton.turnLedOff();
+    } else {
+      playButton.turnLedOn();
+    }
+    repeatEllapsed = 0;
   }
 
   sendMidiNote();
@@ -658,6 +674,7 @@ void RealTimeSystem(byte realtimebyte) {
 
   if (realtimebyte == START) {
     playing = true;
+    repeat = false;
     changeMode(SONG_MODE);
   }
 
