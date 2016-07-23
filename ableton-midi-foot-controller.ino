@@ -584,6 +584,8 @@ void handleNormalMode(boolean forceUpdate) {
     lcd.clear();
     if (song) {
       lcd.print(song);
+      lcd.setCursor(0, 1);
+      lcd.print(selectedSong + (bank * numberOfChannelButtons) + 1);
     }
   }
 
