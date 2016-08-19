@@ -1,2 +1,3 @@
-# ableton-midi-foot-controller
-MIDI foot controller for ableton
+# AMTraC
+## Ableton Midi fooT Controller
+MIDI foot controller for Ableton
