@@ -107,7 +107,8 @@ byte selectedSong = -1;
 const byte STOP_MIDI_NOTE = 0;
 const byte REPEAT_MIDI_NOTE = CONTROL_OFFSET;
 
-byte midiNoteToSend = -1;
+const byte INVALID_MIDI_NOTE = 254;
+byte midiNoteToSend = INVALID_MIDI_NOTE;
 elapsedMillis midiNoteSendStart = 0;
 boolean startedMidiNoteSending = false;
 
@@ -435,10 +436,10 @@ void sendInitMidiNotes() {
 
 
 void sendMidiNote() {
-  if (midiNoteToSend != -1) {
+  if (midiNoteToSend != INVALID_MIDI_NOTE) {
     if (midiNoteSendStart > 100) {
       usbMIDI.sendNoteOff(midiNoteToSend, 0, midiChannel);
-      midiNoteToSend = -1;
+      midiNoteToSend = INVALID_MIDI_NOTE;
       startedMidiNoteSending = false;
     } else if (!startedMidiNoteSending) {
       usbMIDI.sendNoteOn(midiNoteToSend, 99, midiChannel);
