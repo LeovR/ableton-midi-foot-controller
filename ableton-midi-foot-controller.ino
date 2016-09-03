@@ -17,6 +17,8 @@ const byte STOP = 252;
 #define SYSEX_BUFFER_SIZE 100
 char sysexBuffer[SYSEX_BUFFER_SIZE];
 
+#define MAX_ROW_LENGTH 16
+
 // LEDs
 const byte ledPin = 13;
 const byte bpmLed = 17;
@@ -101,7 +103,7 @@ const byte SONG_SIGNATURE = 5;
 const byte SONG_OFFSET = 10;
 
 const byte numberOfSongs = 30;
-char* songs[numberOfSongs];
+char songs[numberOfSongs][MAX_ROW_LENGTH + 1];
 
 const byte CONTROL_OFFSET = SONG_OFFSET + numberOfSongs + 1;
 
@@ -189,6 +191,7 @@ void handleSongSignature(char* messageOriginal) {
   if (mode != SONG_MODE) {
     return;
   }
+  sysexBuffer[0] = (char)0;
 
   strcpy(sysexBuffer, messageOriginal);
   char* strings;
@@ -258,6 +261,7 @@ void handleConfigurationFinished() {
 }
 
 void handleSongConfiguration(char* messageOriginal) {
+  sysexBuffer[0] = (char)0;
   strcpy(sysexBuffer, messageOriginal);
   char* strings;
   strings = strtok(sysexBuffer, "|");
@@ -279,7 +283,13 @@ void handleSongConfiguration(char* messageOriginal) {
   Serial.println(strings);
 #endif
 
-  songs[index] = strings;
+  strncpy(songs[index], strings, MAX_ROW_LENGTH);
+  byte lengthOfName = strlen(strings);
+  if (lengthOfName < MAX_ROW_LENGTH) {
+    songs[index][lengthOfName] = (char)0;
+  } else {
+    songs[index][MAX_ROW_LENGTH] = (char)0;
+  }
 }
 
 byte getConfigurationType(char* messageOriginal) {
