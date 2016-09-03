@@ -14,6 +14,9 @@ const byte START = 250;
 const byte CONTINUE = 251;
 const byte STOP = 252;
 
+#define SYSEX_BUFFER_SIZE 100
+char sysexBuffer[SYSEX_BUFFER_SIZE];
+
 // LEDs
 const byte ledPin = 13;
 const byte bpmLed = 17;
@@ -187,10 +190,9 @@ void handleSongSignature(char* messageOriginal) {
     return;
   }
 
-  char* message = (char*)calloc(strlen(messageOriginal) + 1, sizeof(char));
-  strcpy(message, messageOriginal);
+  strcpy(sysexBuffer, messageOriginal);
   char* strings;
-  strings = strtok(message, "|");
+  strings = strtok(sysexBuffer, "|");
   if (strings == NULL) {
     return;
   }
@@ -256,10 +258,9 @@ void handleConfigurationFinished() {
 }
 
 void handleSongConfiguration(char* messageOriginal) {
-  char* message = (char*)calloc(strlen(messageOriginal) + 1, sizeof(char));
-  strcpy(message, messageOriginal);
+  strcpy(sysexBuffer, messageOriginal);
   char* strings;
-  strings = strtok(message, "|");
+  strings = strtok(sysexBuffer, "|");
   if (strings == NULL) {
     return;
   }
@@ -282,10 +283,9 @@ void handleSongConfiguration(char* messageOriginal) {
 }
 
 byte getConfigurationType(char* messageOriginal) {
-  char* message = (char*)calloc(strlen(messageOriginal) + 1, sizeof(char));
-  strcpy(message, messageOriginal);
+  strcpy(sysexBuffer, messageOriginal);
   char* strings;
-  strings = strtok(message, "|");
+  strings = strtok(sysexBuffer, "|");
   if (strings == NULL) {
     return -1;
   }
