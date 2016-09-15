@@ -7,6 +7,7 @@
 //#define SINGLE_LED_TEST true
 //#define LCD_TEST true
 //#define SONG_CONFIGURATION_DEBUG true
+//#define DEBUG_BANK true
 
 byte counter;
 const byte CLOCK = 248;
@@ -644,10 +645,12 @@ boolean changeBank() {
     bank = bank % numberOfBanks;
     update = true;
   }
+#ifdef DEBUG_BANK
   if (update) {
     Serial.print(F("Bank "));
     Serial.println(bank);
   }
+#endif
   return update;
 }
 
