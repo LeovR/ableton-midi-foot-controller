@@ -10,6 +10,7 @@
 //#define DEBUG_BANK true
 
 byte counter;
+byte tempCounter;
 const byte CLOCK = 248;
 const byte START = 250;
 const byte CONTINUE = 251;
@@ -123,6 +124,8 @@ byte numerator;
 byte denominator;
 byte bars;
 double fullDenominator;
+
+byte currentNumerator = 0;
 
 boolean nextPartScheduled = false;
 
@@ -691,21 +694,31 @@ void RealTimeSystem(byte realtimebyte) {
     counter++;
 
     if (denominator > 0) {
-      double increase = (1 / 24.0) * (denominator / 4.0);
+      double tempIncrease = (tempCounter / 24.0) * (denominator / 4.0);
+      double increase = (1 / 24.0) * (denominator / 4.0) + tempIncrease;
       fullDenominator = fullDenominator + increase;
+      tempCounter = 0;
+
+      currentNumerator = ((byte) fullDenominator) % numberOfChannelButtons;
 
       if (fullDenominator >= numerator && numerator > 0) {
         fullDenominator = 0;
+        currentNumerator = 0;
         bars++;
         handleBarChange();
       }
+    } else {
+      tempCounter++;
     }
 
     if (counter == 24) {
       counter = 0;
       digitalWrite(bpmLed, HIGH);
+
+      channelButtons[currentNumerator].turnLedOn();
     }
     if (counter == 5) {
+      turnAllChannelButtonsOff();
       digitalWrite(bpmLed, LOW);
     }
   }
@@ -719,6 +732,7 @@ void RealTimeSystem(byte realtimebyte) {
     playing = true;
     repeat = false;
     fullDenominator = 0;
+    currentNumerator = 0;
     changeMode(SONG_MODE);
   }
 
@@ -726,6 +740,9 @@ void RealTimeSystem(byte realtimebyte) {
     digitalWrite(bpmLed, LOW);
     playing = false;
     bars = 0;
+    currentNumerator = 0;
+    denominator = 0;
+    numerator = 0;
     changeMode(NORMAL_MODE);
   }
 }
