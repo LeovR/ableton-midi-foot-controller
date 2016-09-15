@@ -680,6 +680,12 @@ void handleBarChange() {
   lcd.print(" bars");
 }
 
+void turnAllChannelButtonsOff() {
+  for (byte i = 0; i < numberOfChannelButtons; i++) {
+    channelButtons[i].turnLedOff();
+  }
+}
+
 void RealTimeSystem(byte realtimebyte) {
   if (realtimebyte == CLOCK) {
     counter++;
