@@ -113,6 +113,7 @@ byte selectedSong = -1;
 
 const byte STOP_MIDI_NOTE = 0;
 const byte REPEAT_MIDI_NOTE = CONTROL_OFFSET;
+const byte SEND_CONFIGURATION = CONTROL_OFFSET + 1;
 
 const byte INVALID_MIDI_NOTE = 254;
 byte midiNoteToSend = INVALID_MIDI_NOTE;
@@ -365,6 +366,11 @@ void setup()
   lcd.setCursor(0, 0);
   lcd.print(displayName);
   allLedsTest();
+
+  delay(3000);
+
+  midiNoteSendStart = 0;
+  midiNoteToSend = SEND_CONFIGURATION;
 }
 
 #ifdef LCD_TEST
@@ -489,7 +495,14 @@ void loop()
     case SONG_MODE:
       handleSongMode();
       break;
+    case UNCONFIGURED:
+      handleUnconfigured();
+      break;
   }
+}
+
+void handleUnconfigured() {
+  sendMidiNote();
 }
 
 void handleSongMode() {
