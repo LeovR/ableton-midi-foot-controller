@@ -21,6 +21,8 @@ char sysexBuffer[SYSEX_BUFFER_SIZE];
 
 #define MAX_ROW_LENGTH 16
 
+char partBuffer[MAX_ROW_LENGTH + 1];
+
 // LEDs
 const byte ledPin = 13;
 const byte bpmLed = 17;
@@ -184,12 +186,14 @@ void handleCurrentPart(char* message) {
     return;
   }
 
+  copyToDisplayBuffer(partBuffer, message);
+
   nextPartScheduled = false;
   bars = 0;
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(message);
+  lcd.print(partBuffer);
 }
 
 void handleSongSignature(char* messageOriginal) {
@@ -228,12 +232,26 @@ void handleNextPart(char* message) {
     return;
   }
 
+  copyToDisplayBuffer(partBuffer, message);
+
   nextPartScheduled = true;
   triggeredElapsed = 0;
 
   clearLine(1);
   lcd.setCursor(0, 1);
-  lcd.print(message);
+  lcd.print(partBuffer);
+}
+
+void copyToDisplayBuffer(char* displayBuffer, char* message) {
+  displayBuffer[0] = (char)0;
+
+  strncpy(displayBuffer, message, MAX_ROW_LENGTH);
+  byte messageLength = strlen(message);
+  if (messageLength < MAX_ROW_LENGTH) {
+    displayBuffer[messageLength] = (char)0;
+  } else {
+    displayBuffer[MAX_ROW_LENGTH] = (char)0;
+  }
 }
 
 void handleConfigurationStart() {
@@ -288,13 +306,7 @@ void handleSongConfiguration(char* messageOriginal) {
   Serial.println(strings);
 #endif
 
-  strncpy(songs[index], strings, MAX_ROW_LENGTH);
-  byte lengthOfName = strlen(strings);
-  if (lengthOfName < MAX_ROW_LENGTH) {
-    songs[index][lengthOfName] = (char)0;
-  } else {
-    songs[index][MAX_ROW_LENGTH] = (char)0;
-  }
+  copyToDisplayBuffer(songs[index], strings);
 }
 
 byte getConfigurationType(char* messageOriginal) {
