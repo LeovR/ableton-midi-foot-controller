@@ -696,7 +696,7 @@ void handleBarChange() {
   clearLine(1);
   lcd.setCursor(0, 1);
   lcd.print(bars);
-  lcd.print(" bars");
+  lcd.print(F(" bars"));
 }
 
 void turnAllChannelButtonsOff() {
