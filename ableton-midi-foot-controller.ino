@@ -613,7 +613,10 @@ void handleNormalMode(boolean forceUpdate) {
     if (song) {
       lcd.print(song);
       lcd.setCursor(0, 1);
-      lcd.print(selectedSong + (bank * numberOfChannelButtons) + 1);
+      lcd.print(F("Bank: "));
+      lcd.print(bank + 1);
+      lcd.print(F(" Song: "));
+      lcd.print(selectedSong + 1);
     }
   }
 
