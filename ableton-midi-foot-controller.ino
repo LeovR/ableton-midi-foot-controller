@@ -116,6 +116,7 @@ byte selectedSong = -1;
 const byte STOP_MIDI_NOTE = 0;
 const byte REPEAT_MIDI_NOTE = CONTROL_OFFSET;
 const byte SEND_CONFIGURATION = CONTROL_OFFSET + 1;
+const byte STOP_CLIPS = CONTROL_OFFSET + 2;
 
 const byte INVALID_MIDI_NOTE = 254;
 byte midiNoteToSend = INVALID_MIDI_NOTE;
@@ -535,6 +536,7 @@ void handleSongMode() {
     midiNoteToSend = STOP_MIDI_NOTE;
     bars = 0;
     changeMode(NORMAL_MODE);
+    return;
   }
 
   if (playButton.isJustReleased()) {
@@ -640,6 +642,18 @@ void handleNormalMode(boolean forceUpdate) {
     midiNoteSendStart = 0;
     midiNoteToSend = selectedSong + (bank * numberOfChannelButtons) + SONG_OFFSET;
     playButton.turnLedOff();
+  }
+
+  if (stopButton.isJustPressed()) {
+    stopButton.turnLedOn();
+  }
+
+  if (stopButton.isJustReleased()) {
+    if (midiNoteToSend == INVALID_MIDI_NOTE) {
+      midiNoteSendStart = 0;
+      midiNoteToSend = STOP_CLIPS;
+    }
+    stopButton.turnLedOff();
   }
 
   sendMidiNote();
