@@ -559,6 +559,7 @@ void handleSongMode() {
     midiNoteSendStart = 0;
     midiNoteToSend = STOP_MIDI_NOTE;
     bars = 0;
+    nextPartScheduled = false;
     changeMode(NORMAL_MODE);
     return;
   }
@@ -809,6 +810,7 @@ void RealTimeSystem(byte realtimebyte) {
     currentNumerator = 0;
     denominator = 0;
     numerator = 0;
+    nextPartScheduled = false;
     changeMode(NORMAL_MODE);
   }
 }
