@@ -103,6 +103,7 @@ const byte CONFIGURATION_FINISHED = 2;
 const byte CURRENT_PART = 3;
 const byte NEXT_PART = 4;
 const byte SONG_SIGNATURE = 5;
+const byte METRONOME = 6;
 
 const byte SONG_OFFSET = 10;
 
@@ -117,6 +118,7 @@ const byte STOP_MIDI_NOTE = 0;
 const byte REPEAT_MIDI_NOTE = CONTROL_OFFSET;
 const byte SEND_CONFIGURATION = CONTROL_OFFSET + 1;
 const byte STOP_CLIPS = CONTROL_OFFSET + 2;
+const byte METRONOME_MIDI_NOTE = CONTROL_OFFSET + 3;
 
 const byte INVALID_MIDI_NOTE = 254;
 byte midiNoteToSend = INVALID_MIDI_NOTE;
@@ -542,6 +544,12 @@ void handleSongMode() {
   } else {
     bankDownButton.turnLedOff();
   }
+
+  if (bankDownButton.isJustReleased()) {
+    midiNoteSendStart = 0;
+    midiNoteToSend = METRONOME_MIDI_NOTE;
+  }
+
 
   if (stopButton.isJustPressed()) {
     stopButton.turnLedOn();
