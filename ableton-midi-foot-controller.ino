@@ -91,7 +91,7 @@ const char mode_0[] PROGMEM = "Normal-Mode";
 const char mode_1[] PROGMEM = "Init-Mode";
 const char* const modeNames[] PROGMEM = {mode_0, mode_1};
 
-const char displayName[] PROGMEM = "MIDI Controller";
+const char displayName[] PROGMEM = "AMTraC";
 
 boolean bothBanksDown = false;
 
