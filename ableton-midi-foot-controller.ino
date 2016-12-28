@@ -137,6 +137,7 @@ boolean repeat = false;
 elapsedMillis repeatElapsed = 0;
 
 elapsedMillis triggeredElapsed = 0;
+boolean metronomeOn = false;
 
 void OnNoteOn(byte channel, byte note, byte velocity) {
   digitalWrite(ledPin, HIGH);
@@ -177,6 +178,9 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
         break;
       case SONG_SIGNATURE:
         handleSongSignature(decoded + 4);
+        break;
+      case METRONOME:
+        handleMetronome(decoded + 3);
         break;
     }
   }
@@ -241,6 +245,10 @@ void handleNextPart(char* message) {
   clearLine(1);
   lcd.setCursor(0, 1);
   lcd.print(partBuffer);
+}
+
+void handleMetronome(char* message) {
+  metronomeOn = strcmp(message, "1") == 0;
 }
 
 void copyToDisplayBuffer(char* displayBuffer, char* message) {
@@ -329,6 +337,8 @@ byte getConfigurationType(char* messageOriginal) {
     return NEXT_PART;
   } else if (strcmp(strings, "SS") == 0) {
     return SONG_SIGNATURE;
+  } else if (strcmp(strings, "M") == 0) {
+    return METRONOME;
   }
   return -1;
 }
@@ -525,6 +535,12 @@ void handleSongMode() {
     } else {
       playButton.turnLedOff();
     }
+  }
+
+  if (metronomeOn) {
+    bankDownButton.turnLedOn();
+  } else {
+    bankDownButton.turnLedOff();
   }
 
   if (stopButton.isJustPressed()) {
