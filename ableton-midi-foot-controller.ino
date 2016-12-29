@@ -77,6 +77,8 @@ byte bank = 0;
 
 const byte numberOfBanks = 5;
 
+const byte numberOfPadBanks = 2;
+
 // Modes
 const byte UNCONFIGURED = 0;
 const byte NORMAL_MODE = 1;
@@ -104,6 +106,7 @@ const byte CURRENT_PART = 3;
 const byte NEXT_PART = 4;
 const byte SONG_SIGNATURE = 5;
 const byte METRONOME = 6;
+const byte PAD_CONFIGURATION = 7;
 
 const byte SONG_OFFSET = 10;
 
@@ -112,7 +115,7 @@ char songs[numberOfSongs][MAX_ROW_LENGTH + 1];
 
 const byte CONTROL_OFFSET = SONG_OFFSET + numberOfSongs + 1;
 
-byte selectedSong = -1;
+const byte numberOfControls = 10;
 
 const byte STOP_MIDI_NOTE = 0;
 const byte REPEAT_MIDI_NOTE = CONTROL_OFFSET;
@@ -120,6 +123,12 @@ const byte SEND_CONFIGURATION = CONTROL_OFFSET + 1;
 const byte STOP_CLIPS = CONTROL_OFFSET + 2;
 const byte METRONOME_MIDI_NOTE = CONTROL_OFFSET + 3;
 
+const byte PAD_OFFSET = CONTROL_OFFSET + numberOfControls + 1;
+const byte numberOfPads = 12;
+char pads[numberOfPads][MAX_ROW_LENGTH + 1];
+
+byte selectedSong = -1;
+byte selectedPad = -1;
 const byte INVALID_MIDI_NOTE = 254;
 byte midiNoteToSend = INVALID_MIDI_NOTE;
 elapsedMillis midiNoteSendStart = 0;
@@ -183,6 +192,9 @@ void SystemExclusiveMessage(const unsigned char *array, short unsigned int size,
         break;
       case METRONOME:
         handleMetronome(decoded + 3);
+        break;
+      case PAD_CONFIGURATION:
+        handlePadConfiguration(decoded + 4);
         break;
     }
   }
@@ -291,6 +303,7 @@ void handleConfigurationFinished() {
   lcd.clear();
 
   selectedSong = 0;
+  selectedPad = 0;
   changeMode(NORMAL_MODE);
 }
 
@@ -320,6 +333,26 @@ void handleSongConfiguration(char* messageOriginal) {
   copyToDisplayBuffer(songs[index], strings);
 }
 
+
+void handlePadConfiguration(char* messageOriginal) {
+  sysexBuffer[0] = (char)0;
+  strcpy(sysexBuffer, messageOriginal);
+  char* strings;
+  strings = strtok(sysexBuffer, "|");
+  if (strings == NULL) {
+    return;
+  }
+
+  byte index = atoi(strings);
+
+  strings = strtok(NULL, "|");
+  if (strings == NULL) {
+    return;
+  }
+
+  copyToDisplayBuffer(pads[index], strings);
+}
+
 byte getConfigurationType(char* messageOriginal) {
   strcpy(sysexBuffer, messageOriginal);
   char* strings;
@@ -341,6 +374,8 @@ byte getConfigurationType(char* messageOriginal) {
     return SONG_SIGNATURE;
   } else if (strcmp(strings, "M") == 0) {
     return METRONOME;
+  } else if (strcmp(strings, "PC") == 0) {
+    return PAD_CONFIGURATION;
   }
   return -1;
 }
@@ -501,8 +536,15 @@ void loop()
 
   boolean modeChange = changeMode();
   if (modeChange) {
-    Serial.println(modeNames[mode]);
-    resetLeds();
+    if (mode == NORMAL_MODE && playing) {
+      mode = SONG_MODE;
+    } else if (mode == SONG_MODE) {
+      mode = NORMAL_MODE;
+      turnAllChannelButtonsOff();
+      resetBankLeds();
+      turnCurrentSelectionLedOn();
+      printCurrentSelection();
+    }
     return;
   }
 
@@ -528,6 +570,22 @@ void loop()
 
 void handleUnconfigured() {
   sendMidiNote();
+}
+
+void turnCurrentSelectionLedOn() {
+  if (bank < numberOfBanks) {
+    turnCurrentSongLedOn();
+  } else {
+    turnCurrentPadLedOn();
+  }
+}
+
+void printCurrentSelection() {
+  if (bank < numberOfBanks) {
+    printCurrentSong();
+  } else {
+    printCurrentPad();
+  }
 }
 
 void handleSongMode() {
@@ -633,30 +691,35 @@ void handleNormalMode(boolean forceUpdate) {
   boolean bankChange = changeBank();
   if (bankChange) {
     selectedSong = 0;
+    selectedPad = 0;
   }
   boolean update = false;
+  boolean padUpdate = false;
+
+  boolean songChange = bank < numberOfBanks;
+
   for (byte i = 0; i < numberOfChannelButtons; i++) {
     if (channelButtons[i].isJustReleased()) {
-      update = selectedSong != i;
-      selectedSong = i;
+      if (songChange) {
+        update = selectedSong != i;
+        selectedSong = i;
+      } else {
+        padUpdate = selectedPad != i;
+        selectedPad = i;
+      }
     }
   }
 
-  if (update || forceUpdate || bankChange) {
-    for (byte i = 0; i < numberOfChannelButtons; i++) {
-      channelButtons[i].turnLedOff();
-    }
-    channelButtons[selectedSong].turnLedOn();
-    char* song = songs[selectedSong + (bank * numberOfChannelButtons)];
-    lcd.clear();
-    if (song) {
-      lcd.print(song);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Bank: "));
-      lcd.print(bank + 1);
-      lcd.print(F(" Song: "));
-      lcd.print(selectedSong + 1);
-    }
+  if (update || (songChange && (forceUpdate || bankChange))) {
+    turnAllChannelButtonsOff();
+    turnCurrentSongLedOn();
+    printCurrentSong();
+  }
+
+  if (padUpdate || (!songChange && (forceUpdate || bankChange))) {
+    turnAllChannelButtonsOff();
+    turnCurrentPadLedOn();
+    printCurrentPad();
   }
 
   if (playButton.isJustPressed()) {
@@ -665,8 +728,15 @@ void handleNormalMode(boolean forceUpdate) {
 
   if (playButton.isJustReleased()) {
     midiNoteSendStart = 0;
-    midiNoteToSend = selectedSong + (bank * numberOfChannelButtons) + SONG_OFFSET;
+    if (songChange) {
+      midiNoteToSend = selectedSong + (bank * numberOfChannelButtons) + SONG_OFFSET;
+    } else {
+      midiNoteToSend = selectedPad + ((bank - numberOfBanks) * numberOfChannelButtons) + PAD_OFFSET;
+    }
     playButton.turnLedOff();
+    if (playing) {
+      mode = SONG_MODE;
+    }
   }
 
   if (stopButton.isJustPressed()) {
@@ -676,12 +746,51 @@ void handleNormalMode(boolean forceUpdate) {
   if (stopButton.isJustReleased()) {
     if (midiNoteToSend == INVALID_MIDI_NOTE) {
       midiNoteSendStart = 0;
-      midiNoteToSend = STOP_CLIPS;
+      if (playing) {
+        midiNoteToSend = STOP_MIDI_NOTE;
+      } else {
+        midiNoteToSend = STOP_CLIPS;
+      }
     }
     stopButton.turnLedOff();
   }
 
   sendMidiNote();
+}
+
+void turnCurrentSongLedOn() {
+  channelButtons[selectedSong].turnLedOn();
+}
+
+void turnCurrentPadLedOn() {
+  channelButtons[selectedPad].turnLedOn();
+}
+
+void printCurrentSong() {
+  char* song = songs[selectedSong + (bank * numberOfChannelButtons)];
+  lcd.clear();
+  if (song) {
+    lcd.print(song);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Bank: "));
+    lcd.print(bank + 1);
+    lcd.print(F(" Song: "));
+    lcd.print(selectedSong + 1);
+  }
+}
+
+
+void printCurrentPad() {
+  char* pad = pads[selectedPad + ((bank - numberOfBanks) * numberOfChannelButtons)];
+  lcd.clear();
+  if (pad) {
+    lcd.print(pad);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Bank: "));
+    lcd.print((bank - numberOfBanks) + 1);
+    lcd.print(F(" Pad: "));
+    lcd.print(selectedPad + 1);
+  }
 }
 
 void handleNormalMode() {
@@ -693,8 +802,6 @@ boolean changeMode() {
     bothBanksDown = true;
   } else if (bothBanksDown && ((bankDownButton.isJustReleased() && !bankUpButton.isPressed()) || (bankUpButton.isJustReleased() && !bankDownButton.isPressed()))) {
     bothBanksDown = false;
-    mode++;
-    mode = mode % modeCount;
     return true;
   } else if (bothBanksDown) {
     return false;
@@ -708,11 +815,11 @@ boolean changeBank() {
     bank--;
     update = true;
     if (bank == 255) {
-      bank = numberOfBanks - 1 ;
+      bank = numberOfBanks + numberOfPadBanks - 1 ;
     }
   } else if (bankUpButton.isJustReleased()) {
     bank++;
-    bank = bank % numberOfBanks;
+    bank = bank % (numberOfBanks + numberOfPadBanks);
     update = true;
   }
 #ifdef DEBUG_BANK
@@ -732,6 +839,11 @@ void updateInitLeds() {
       (*allButtons[i]).turnLedOff();
     }
   }
+}
+
+void resetBankLeds() {
+  bankUpButton.turnLedOff();
+  bankDownButton.turnLedOff();
 }
 
 void resetLeds() {
@@ -782,10 +894,15 @@ void RealTimeSystem(byte realtimebyte) {
       counter = 0;
       digitalWrite(bpmLed, HIGH);
 
-      channelButtons[currentNumerator].turnLedOn();
+      if (mode == SONG_MODE) {
+        channelButtons[currentNumerator].turnLedOn();
+      }
+
     }
     if (counter == 5) {
-      turnAllChannelButtonsOff();
+      if (mode == SONG_MODE) {
+        turnAllChannelButtonsOff();
+      }
       digitalWrite(bpmLed, LOW);
     }
   }
